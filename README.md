@@ -21,7 +21,6 @@ This project provides a clean setup for building JavaScript web resources with:
 - Ready-to-use examples for Contact and Account forms
 
 ## Project Structure
-```
 ```bash
 src/
 ├── common/
@@ -45,6 +44,7 @@ npm install
 
 npm run build
 
+##Output 
 ```bash
 dist/
 ├── crm_forms_contact_contact.form.js
