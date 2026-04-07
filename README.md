@@ -22,19 +22,20 @@ This project provides a clean setup for building JavaScript web resources with:
 
 ## Project Structure
 ```
+```bash
 src/
-common/
-Helper.ts
-NotificationHelper.ts
-SubgridHelper.ts
-BpfHelper.ts
-QueryHelper.ts
-
-forms/
-contact/
-contact.form.ts
-account/
-account.form.ts
+├── common/
+│   ├── Helper.ts
+│   ├── NotificationHelper.ts
+│   ├── SubgridHelper.ts
+│   ├── BpfHelper.ts
+│   └── QueryHelper.ts
+│
+└── forms/
+    ├── contact/
+    │   └── contact.form.ts
+    └── account/
+        └── account.form.ts
 ```
 ## Installation
 
@@ -44,11 +45,12 @@ npm install
 
 npm run build
 
-## Output
-```
+```bash
 dist/
-crm_forms_contact_contact.form.js
-crm_forms_account_account.form.js
+├── crm_forms_contact_contact.form.js
+├── crm_forms_contact_contact.form.js.map
+├── crm_forms_account_account.form.js
+└── crm_forms_account_account.form.js.map
 ```
 Each output file represents a separate CRM web resource.
 
