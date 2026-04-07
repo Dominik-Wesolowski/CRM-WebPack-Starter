@@ -21,7 +21,7 @@ This project provides a clean setup for building JavaScript web resources with:
 - Ready-to-use examples for Contact and Account forms
 
 ## Project Structure
-
+```
 src/
 common/
 Helper.ts
@@ -35,7 +35,7 @@ contact/
 contact.form.ts
 account/
 account.form.ts
-
+```
 ## Installation
 
 npm install
@@ -45,11 +45,11 @@ npm install
 npm run build
 
 ## Output
-
+```
 dist/
 crm_forms_contact_contact.form.js
 crm_forms_account_account.form.js
-
+```
 Each output file represents a separate CRM web resource.
 
 ## CRM Registration
@@ -116,5 +116,3 @@ Avoid:
 - Single large bundles
 - Over-abstracting Xrm
 - Mixing multiple forms in one script
-# CRM-WebPack-Starter
-# CRM-WebPack-Starter
