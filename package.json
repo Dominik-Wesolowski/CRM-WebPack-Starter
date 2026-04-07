@@ -1,0 +1,17 @@
+{
+  "name": "crm-webpack-ts-starter",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "webpack",
+    "build:dev": "webpack --mode development",
+    "watch": "webpack --watch --mode development"
+  },
+  "devDependencies": {
+    "@types/xrm": "^9.0.90",
+    "ts-loader": "^9.5.4",
+    "typescript": "^6.0.2",
+    "webpack": "^5.105.4",
+    "webpack-cli": "^6.0.1"
+  }
+}

@@ -1,0 +1,48 @@
+# Node modules
+node_modules/
+
+# Build output
+dist/
+build/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE / Editor
+.vscode/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# TypeScript
+.tsbuildinfo
+
+# Environment variables
+.env
+.env.
+
+# Coverage / testing
+coverage/
+
+# Temporary files
+tmp/
+temp/
+
+# Optional: lock file (keep if you want reproducible builds)
+# package-lock.json
+
+# Mac specific
+.AppleDouble
+.LSOverride
+
+# Windows specific
+Desktop.ini
