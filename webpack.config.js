@@ -1,7 +1,6 @@
 const path = require('path');
 const fs = require('fs');
 
-// 🔧 tutaj sterujesz prefixem
 const PREFIX = process.env.CRM_PREFIX || 'crm_';
 
 function getEntryFiles() {
@@ -31,10 +30,7 @@ function getEntryFiles() {
       }
 
       const relativePath = path.relative(srcRoot, fullPath);
-
-      const normalized = relativePath.replace(/\.ts$/i, '').replace(/[\\/]/g, '_');
-
-      const outputName = `${PREFIX}${normalized}`;
+      const outputName = relativePath.replace(/\.ts$/i, '');
 
       entries[outputName] = fullPath;
     }
@@ -52,7 +48,15 @@ module.exports = {
   entry: getEntryFiles(),
   output: {
     path: path.resolve(__dirname, 'dist'),
-    filename: '[name].js',
+    filename: (pathData) => {
+      const chunkName = pathData.chunk.name;
+      const parts = chunkName.split('/');
+
+      const fileName = parts.pop();
+      const folderPath = parts.join('/');
+
+      return `${folderPath}/${PREFIX}${fileName}.js`;
+    },
     clean: true,
   },
   resolve: {

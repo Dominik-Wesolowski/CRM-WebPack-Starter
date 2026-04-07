@@ -36,7 +36,6 @@ src/
 │   ├── SubgridHelper.ts
 │   ├── BpfHelper.ts
 │   ├── QueryHelper.ts
-│   ├── QuickViewHelper.ts
 │   ├── ValidationHelper.ts
 │   ├── NavigationHelper.ts
 │   └── EnvironmentVariableHelper.ts
@@ -134,9 +133,6 @@ crm_forms_account_account.form.js
 
 - **BpfHelper**
   Business Process Flow handling
-
-- **QuickViewHelper**
-  Safe access to Quick View controls and attributes
 
 ---
 
