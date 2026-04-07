@@ -18,7 +18,7 @@ export class Helper {
     formContext: Xrm.FormContext,
     logicalName: string,
   ): Xrm.Attributes.Attribute | null {
-    return formContext.getAttribute(logicalName) as Xrm.Attributes.Attribute | null;
+    return formContext.getAttribute(logicalName);
   }
 
   public static getControl<T extends Xrm.Controls.Control = Xrm.Controls.Control>(
@@ -26,6 +26,39 @@ export class Helper {
     logicalName: string,
   ): T | null {
     return formContext.getControl(logicalName) as T | null;
+  }
+
+  public static getStandardControl(
+    formContext: Xrm.FormContext,
+    logicalName: string,
+  ): Xrm.Controls.StandardControl | null {
+    return formContext.getControl(logicalName) as Xrm.Controls.StandardControl | null;
+  }
+
+  public static requireAttribute(
+    formContext: Xrm.FormContext,
+    logicalName: string,
+  ): Xrm.Attributes.Attribute {
+    const attribute = this.getAttribute(formContext, logicalName);
+
+    if (!attribute) {
+      throw new Error(`Attribute '${logicalName}' was not found on the form.`);
+    }
+
+    return attribute;
+  }
+
+  public static requireControl<T extends Xrm.Controls.Control = Xrm.Controls.Control>(
+    formContext: Xrm.FormContext,
+    logicalName: string,
+  ): T {
+    const control = this.getControl<T>(formContext, logicalName);
+
+    if (!control) {
+      throw new Error(`Control '${logicalName}' was not found on the form.`);
+    }
+
+    return control;
   }
 
   public static hasAttribute(formContext: Xrm.FormContext, logicalName: string): boolean {
@@ -48,6 +81,7 @@ export class Helper {
     fireOnChange = false,
   ): boolean {
     const attribute = this.getAttribute(formContext, logicalName);
+
     if (!attribute) {
       return false;
     }
@@ -57,7 +91,7 @@ export class Helper {
       return false;
     }
 
-    (attribute as Xrm.Attributes.Attribute).setValue(value as any);
+    attribute.setValue(value as any);
 
     if (fireOnChange) {
       attribute.fireOnChange();
@@ -66,9 +100,29 @@ export class Helper {
     return true;
   }
 
+  public static clearValue(
+    formContext: Xrm.FormContext,
+    logicalName: string,
+    fireOnChange = false,
+  ): boolean {
+    return this.setValue(formContext, logicalName, null, fireOnChange);
+  }
+
   public static isDirty(formContext: Xrm.FormContext, logicalName: string): boolean {
     const attribute = this.getAttribute(formContext, logicalName);
     return attribute ? attribute.getIsDirty() : false;
+  }
+
+  public static isDirtyAny(formContext: Xrm.FormContext, logicalNames: string[]): boolean {
+    return logicalNames.some((logicalName) => this.isDirty(formContext, logicalName));
+  }
+
+  public static getRequiredLevel(
+    formContext: Xrm.FormContext,
+    logicalName: string,
+  ): Xrm.Attributes.RequirementLevel | null {
+    const attribute = this.getAttribute(formContext, logicalName);
+    return attribute ? attribute.getRequiredLevel() : null;
   }
 
   public static setRequiredLevel(
@@ -77,6 +131,7 @@ export class Helper {
     level: Xrm.Attributes.RequirementLevel,
   ): boolean {
     const attribute = this.getAttribute(formContext, logicalName);
+
     if (!attribute) {
       return false;
     }
@@ -95,6 +150,7 @@ export class Helper {
     mode: Xrm.SubmitMode,
   ): boolean {
     const attribute = this.getAttribute(formContext, logicalName);
+
     if (!attribute) {
       return false;
     }
@@ -113,7 +169,7 @@ export class Helper {
     value: string | null,
     fireOnChange = false,
   ): boolean {
-    return this.setValue<string>(formContext, logicalName, value, fireOnChange);
+    return this.setValue(formContext, logicalName, value, fireOnChange);
   }
 
   public static getNumber(formContext: Xrm.FormContext, logicalName: string): number | null {
@@ -126,7 +182,7 @@ export class Helper {
     value: number | null,
     fireOnChange = false,
   ): boolean {
-    return this.setValue<number>(formContext, logicalName, value, fireOnChange);
+    return this.setValue(formContext, logicalName, value, fireOnChange);
   }
 
   public static getBoolean(formContext: Xrm.FormContext, logicalName: string): boolean | null {
@@ -139,7 +195,7 @@ export class Helper {
     value: boolean | null,
     fireOnChange = false,
   ): boolean {
-    return this.setValue<boolean>(formContext, logicalName, value, fireOnChange);
+    return this.setValue(formContext, logicalName, value, fireOnChange);
   }
 
   public static getDate(formContext: Xrm.FormContext, logicalName: string): Date | null {
@@ -152,10 +208,13 @@ export class Helper {
     value: Date | null,
     fireOnChange = false,
   ): boolean {
-    return this.setValue<Date>(formContext, logicalName, value, fireOnChange);
+    return this.setValue(formContext, logicalName, value, fireOnChange);
   }
 
-  public static getLookup(formContext: Xrm.FormContext, logicalName: string): LookupValue | null {
+  public static getLookup(
+    formContext: Xrm.FormContext,
+    logicalName: string,
+  ): { id: string; name?: string; entityType: string } | null {
     const values = this.getValue<Xrm.LookupValue[]>(formContext, logicalName);
 
     if (!values || values.length === 0) {
@@ -171,7 +230,10 @@ export class Helper {
     };
   }
 
-  public static getLookups(formContext: Xrm.FormContext, logicalName: string): LookupValue[] {
+  public static getLookups(
+    formContext: Xrm.FormContext,
+    logicalName: string,
+  ): Array<{ id: string; name?: string; entityType: string }> {
     const values = this.getValue<Xrm.LookupValue[]>(formContext, logicalName);
 
     if (!values || values.length === 0) {
@@ -203,7 +265,7 @@ export class Helper {
   public static setLookup(
     formContext: Xrm.FormContext,
     logicalName: string,
-    value: LookupValue | null,
+    value: { id: string; name?: string; entityType: string } | null,
     fireOnChange = false,
   ): boolean {
     const lookupValue = value
@@ -216,7 +278,7 @@ export class Helper {
         ]
       : null;
 
-    return this.setValue<Xrm.LookupValue[]>(formContext, logicalName, lookupValue, fireOnChange);
+    return this.setValue(formContext, logicalName, lookupValue, fireOnChange);
   }
 
   public static clearLookup(
@@ -240,13 +302,14 @@ export class Helper {
     value: T | null,
     fireOnChange = false,
   ): boolean {
-    return this.setValue<T>(formContext, logicalName, value, fireOnChange);
+    return this.setValue(formContext, logicalName, value, fireOnChange);
   }
 
   public static getOptionSetText(formContext: Xrm.FormContext, logicalName: string): string | null {
     const attribute = formContext.getAttribute(
       logicalName,
     ) as Xrm.Attributes.OptionSetAttribute | null;
+
     if (!attribute) {
       return null;
     }
@@ -254,25 +317,27 @@ export class Helper {
     return attribute.getText();
   }
 
-  public static getOptions<T extends number = number>(
+  public static getOptions(
     formContext: Xrm.FormContext,
     logicalName: string,
-  ): OptionSetOption<T>[] {
+  ): Array<{ text: string; value: number }> {
     const attribute = formContext.getAttribute(
       logicalName,
     ) as Xrm.Attributes.OptionSetAttribute | null;
+
     if (!attribute) {
       return [];
     }
 
     return attribute.getOptions().map((option) => ({
       text: option.text,
-      value: option.value as T,
+      value: option.value,
     }));
   }
 
   public static clearOptions(formContext: Xrm.FormContext, logicalName: string): boolean {
     const control = formContext.getControl(logicalName) as Xrm.Controls.OptionSetControl | null;
+
     if (!control) {
       return false;
     }
@@ -284,10 +349,11 @@ export class Helper {
   public static addOption(
     formContext: Xrm.FormContext,
     logicalName: string,
-    option: OptionSetOption<number>,
+    option: { text: string; value: number },
     index?: number,
   ): boolean {
     const control = formContext.getControl(logicalName) as Xrm.Controls.OptionSetControl | null;
+
     if (!control) {
       return false;
     }
@@ -307,6 +373,7 @@ export class Helper {
     value: number,
   ): boolean {
     const control = formContext.getControl(logicalName) as Xrm.Controls.OptionSetControl | null;
+
     if (!control) {
       return false;
     }
@@ -350,7 +417,8 @@ export class Helper {
     logicalName: string,
     visible: boolean,
   ): boolean {
-    const control = this.getControl<Xrm.Controls.StandardControl>(formContext, logicalName);
+    const control = this.getStandardControl(formContext, logicalName);
+
     if (!control) {
       return false;
     }
@@ -359,12 +427,23 @@ export class Helper {
     return true;
   }
 
+  public static setMultipleVisible(
+    formContext: Xrm.FormContext,
+    logicalNames: string[],
+    visible: boolean,
+  ): void {
+    for (const logicalName of logicalNames) {
+      this.setVisible(formContext, logicalName, visible);
+    }
+  }
+
   public static setDisabled(
     formContext: Xrm.FormContext,
     logicalName: string,
     disabled: boolean,
   ): boolean {
-    const control = this.getControl<Xrm.Controls.StandardControl>(formContext, logicalName);
+    const control = this.getStandardControl(formContext, logicalName);
+
     if (!control) {
       return false;
     }
@@ -373,8 +452,19 @@ export class Helper {
     return true;
   }
 
+  public static setMultipleDisabled(
+    formContext: Xrm.FormContext,
+    logicalNames: string[],
+    disabled: boolean,
+  ): void {
+    for (const logicalName of logicalNames) {
+      this.setDisabled(formContext, logicalName, disabled);
+    }
+  }
+
   public static setFocus(formContext: Xrm.FormContext, logicalName: string): boolean {
-    const control = this.getControl<Xrm.Controls.StandardControl>(formContext, logicalName);
+    const control = this.getStandardControl(formContext, logicalName);
+
     if (!control) {
       return false;
     }
@@ -388,7 +478,8 @@ export class Helper {
     logicalName: string,
     label: string,
   ): boolean {
-    const control = this.getControl(formContext, logicalName);
+    const control = this.getStandardControl(formContext, logicalName);
+
     if (!control) {
       return false;
     }
@@ -399,11 +490,27 @@ export class Helper {
 
   public static showTab(formContext: Xrm.FormContext, tabName: string, visible: boolean): boolean {
     const tab = formContext.ui.tabs.get(tabName);
+
     if (!tab) {
       return false;
     }
 
     tab.setVisible(visible);
+    return true;
+  }
+
+  public static setTabDisplayState(
+    formContext: Xrm.FormContext,
+    tabName: string,
+    state: 'expanded' | 'collapsed',
+  ): boolean {
+    const tab = formContext.ui.tabs.get(tabName);
+
+    if (!tab) {
+      return false;
+    }
+
+    tab.setDisplayState(state);
     return true;
   }
 
@@ -448,6 +555,10 @@ export class Helper {
 
   public static getEntityName(formContext: Xrm.FormContext): string {
     return formContext.data.entity.getEntityName();
+  }
+
+  public static getFormId(formContext: Xrm.FormContext): string | undefined {
+    return formContext.ui.formSelector.getCurrentItem()?.getId();
   }
 
   public static getFormType(formContext: Xrm.FormContext): XrmEnum.FormType {
