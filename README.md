@@ -44,7 +44,7 @@ npm install
 
 npm run build
 
-##Output 
+## Output 
 ```bash
 dist/
 ├── crm_forms_contact_contact.form.js
