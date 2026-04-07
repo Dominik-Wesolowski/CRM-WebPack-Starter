@@ -166,6 +166,95 @@ crm_forms_account_account.form.js
 
 ---
 
+## QueryHelper Usage
+
+`QueryHelper` provides a lightweight way to build and execute Web API queries without manually concatenating strings.
+
+---
+
+### Retrieve single record
+
+```ts
+const account = await QueryHelper.retrieve('account', accountId, {
+  select: ['accountid', 'name', 'telephone1'],
+});
+
+console.log(account.name);
+```
+
+---
+
+### Retrieve multiple records
+
+```ts
+const result = await QueryHelper.retrieveMultiple('contact', {
+  select: ['contactid', 'fullname'],
+  filter: QueryHelper.filterEquals('statecode', 0),
+  top: 5,
+});
+
+for (const contact of result.entities) {
+  console.log(contact.fullname);
+}
+```
+
+---
+
+### Select only (simple)
+
+```ts
+const query = QueryHelper.select('name', 'accountnumber');
+// returns "?$select=name,accountnumber"
+```
+
+---
+
+### Filter examples
+
+```ts
+const filter = QueryHelper.filterEquals('name', 'Contoso');
+// name eq 'Contoso'
+```
+
+```ts
+const filter = QueryHelper.and(
+  QueryHelper.filterEquals('statecode', 0),
+  QueryHelper.filterEquals('customertypecode', 1),
+);
+```
+
+```ts
+const filter = QueryHelper.or(
+  QueryHelper.filterEquals('name', 'Contoso'),
+  QueryHelper.filterEquals('name', 'Fabrikam'),
+);
+```
+
+---
+
+### Full example
+
+```ts
+const contacts = await QueryHelper.retrieveMultiple('contact', {
+  select: ['contactid', 'fullname', 'emailaddress1'],
+  filter: QueryHelper.and(
+    QueryHelper.filterEquals('statecode', 0),
+    QueryHelper.filterEquals('firstname', 'John'),
+  ),
+  orderBy: ['fullname asc'],
+  top: 10,
+});
+```
+
+---
+
+### Notes
+
+- No manual string building needed
+- Automatically handles `$select`, `$filter`, `$expand`, `$orderby`, `$top`
+- Returns raw WebApi response (`retrieve` / `retrieveMultipleRecords`)
+- Keep filters simple to avoid OData mistakes
+
 ## Recommendations
 
 ### Keep
