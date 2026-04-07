@@ -8,8 +8,8 @@ class AccountForm {
   private readonly telephone = 'telephone1';
   private readonly primaryContact = 'primarycontactid';
 
-  private readonly descriptionNotificationId = 'sha_account_description_warning';
-  private readonly primaryContactNotificationId = 'sha_account_primary_contact_info';
+  private readonly descriptionNotificationId = 'crm_account_description_warning';
+  private readonly primaryContactNotificationId = 'crm_account_primary_contact_info';
 
   public onLoad(executionContext: Xrm.Events.EventContext): void {
     const formContext = Helper.getFormContext(executionContext);

@@ -9,9 +9,9 @@ class ContactForm {
   private readonly parentCustomer = 'parentcustomerid';
   private readonly mobilePhone = 'mobilephone';
 
-  private readonly nameNotificationId = 'sha_contact_name_warning';
-  private readonly mobileNotificationId = 'sha_contact_mobile_warning';
-  private readonly parentNotificationId = 'sha_contact_parent_info';
+  private readonly nameNotificationId = 'crm_contact_name_warning';
+  private readonly mobileNotificationId = 'crm_contact_mobile_warning';
+  private readonly parentNotificationId = 'crm_contact_parent_info';
 
   public onLoad(executionContext: Xrm.Events.EventContext): void {
     const formContext = Helper.getFormContext(executionContext);
