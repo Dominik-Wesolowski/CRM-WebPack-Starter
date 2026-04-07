@@ -3,10 +3,16 @@ const fs = require('fs');
 
 const PREFIX = process.env.CRM_PREFIX || 'crm_';
 
+const EXCLUDED_ROOT_FOLDERS = new Set(['common', 'types', 'models']);
+
+const ENTRY_FILE_SUFFIXES = ['.form.ts', '.ribbon.ts', '.dialog.ts', '.command.ts'];
+
+function isEntryFile(fileName) {
+  return ENTRY_FILE_SUFFIXES.some((suffix) => fileName.endsWith(suffix));
+}
+
 function getEntryFiles() {
   const srcRoot = path.resolve(__dirname, 'src');
-  const entryRoots = [path.join(srcRoot, 'forms'), path.join(srcRoot, 'ribbons')];
-
   const entries = {};
 
   function scan(dir) {
@@ -21,11 +27,18 @@ function getEntryFiles() {
       const stat = fs.statSync(fullPath);
 
       if (stat.isDirectory()) {
+        const relativeDir = path.relative(srcRoot, fullPath);
+        const rootFolder = relativeDir.split(path.sep)[0];
+
+        if (EXCLUDED_ROOT_FOLDERS.has(rootFolder)) {
+          continue;
+        }
+
         scan(fullPath);
         continue;
       }
 
-      if (!item.endsWith('.ts')) {
+      if (!isEntryFile(item)) {
         continue;
       }
 
@@ -36,9 +49,7 @@ function getEntryFiles() {
     }
   }
 
-  for (const root of entryRoots) {
-    scan(root);
-  }
+  scan(srcRoot);
 
   return entries;
 }

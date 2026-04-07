@@ -77,6 +77,106 @@ dist/
 
 Each output file represents a separate CRM web resource.
 
+## Build Strategy
+
+This project uses an automatic multi-entry setup based on file naming conventions.
+
+### How it works
+
+- The build scans the entire `src` directory
+- Only files with specific suffixes are treated as entry points
+- Folder structure from `src` is preserved in `dist`
+- Shared files are excluded from being bundled as separate outputs
+
+---
+
+### Entry file conventions
+
+Only the following files are compiled into separate web resources:
+
+```
+*.form.ts
+*.ribbon.ts
+*.dialog.ts
+*.command.ts
+```
+
+Example:
+
+```
+src/forms/contact/contact.form.ts   ✔ included
+src/forms/contact/contact.utils.ts  ✖ ignored
+src/common/Helper.ts                ✖ ignored
+```
+
+---
+
+### Output structure
+
+The output mirrors the `src` structure:
+
+```
+dist/
+  forms/
+    contact/
+      crm_contact.form.js
+  ribbons/
+    account/
+      crm_account.ribbon.js
+```
+
+- Folder structure is preserved
+- Prefix (`crm_` by default) is applied only to file names
+
+---
+
+### Excluded folders
+
+The following root folders are ignored during entry scanning:
+
+```
+common
+types
+models
+```
+
+These are intended for shared code and will only be included when imported.
+
+---
+
+### Adding new entries
+
+To create a new web resource:
+
+1. Add a file with a valid suffix:
+
+```
+src/forms/lead/lead.form.ts
+```
+
+2. Run build:
+
+```
+npm run build
+```
+
+3. Output will be generated automatically:
+
+```
+dist/forms/lead/crm_lead.form.js
+```
+
+No configuration changes required.
+
+---
+
+### Notes
+
+- No manual entry configuration is needed
+- Prevents accidental bundling of helper or utility files
+- Scales cleanly with large projects
+- New folders are automatically supported
+
 ---
 
 ## CRM Registration
