@@ -2,54 +2,47 @@ import { Helper } from '../../common/Helper';
 import { NotificationHelper } from '../../common/NotificationHelper';
 import { QueryHelper } from '../../common/QueryHelper';
 
-interface ContactSummary {
-  contactid: string;
-  fullname: string;
-  mobilephone?: string;
-  emailaddress1?: string;
-}
+class AccountForm {
+  private readonly accountName = 'name';
+  private readonly description = 'description';
+  private readonly telephone = 'telephone1';
+  private readonly primaryContact = 'primarycontactid';
 
-namespace sha.account.form {
-  const accountName = 'name';
-  const description = 'description';
-  const telephone = 'telephone1';
-  const primaryContact = 'primarycontactid';
+  private readonly descriptionNotificationId = 'sha_account_description_warning';
+  private readonly primaryContactNotificationId = 'sha_account_primary_contact_info';
 
-  const descriptionNotificationId = 'sha_account_description_warning';
-  const primaryContactNotificationId = 'sha_account_primary_contact_info';
-
-  export function onLoad(executionContext: Xrm.Events.EventContext): void {
+  public onLoad(executionContext: Xrm.Events.EventContext): void {
     const formContext = Helper.getFormContext(executionContext);
 
-    enforceNameAsRequired(formContext);
-    validateDescriptionLength(formContext);
-    void loadPrimaryContactInfo(formContext);
+    this.enforceNameAsRequired(formContext);
+    this.validateDescriptionLength(formContext);
+    void this.loadPrimaryContactInfo(formContext);
   }
 
-  export function onNameChange(executionContext: Xrm.Events.EventContext): void {
+  public onNameChange(executionContext: Xrm.Events.EventContext): void {
     const formContext = Helper.getFormContext(executionContext);
-    enforceNameAsRequired(formContext);
+    this.enforceNameAsRequired(formContext);
   }
 
-  export function onDescriptionChange(executionContext: Xrm.Events.EventContext): void {
+  public onDescriptionChange(executionContext: Xrm.Events.EventContext): void {
     const formContext = Helper.getFormContext(executionContext);
-    validateDescriptionLength(formContext);
+    this.validateDescriptionLength(formContext);
   }
 
-  export function onPrimaryContactChange(executionContext: Xrm.Events.EventContext): void {
+  public onPrimaryContactChange(executionContext: Xrm.Events.EventContext): void {
     const formContext = Helper.getFormContext(executionContext);
-    void loadPrimaryContactInfo(formContext);
+    void this.loadPrimaryContactInfo(formContext);
   }
 
-  function enforceNameAsRequired(formContext: Xrm.FormContext): void {
-    const value = Helper.getText(formContext, accountName);
-    Helper.setRequiredLevel(formContext, accountName, value ? 'required' : 'recommended');
+  private enforceNameAsRequired(formContext: Xrm.FormContext): void {
+    const value = Helper.getText(formContext, this.accountName);
+    Helper.setRequiredLevel(formContext, this.accountName, value ? 'required' : 'recommended');
   }
 
-  function validateDescriptionLength(formContext: Xrm.FormContext): void {
-    const value = Helper.getText(formContext, description);
+  private validateDescriptionLength(formContext: Xrm.FormContext): void {
+    const value = Helper.getText(formContext, this.description);
 
-    NotificationHelper.clearForm(formContext, descriptionNotificationId);
+    NotificationHelper.clearForm(formContext, this.descriptionNotificationId);
 
     if (!value) {
       return;
@@ -60,42 +53,55 @@ namespace sha.account.form {
         formContext,
         'Description is longer than 250 characters.',
         XrmEnum.FormNotificationLevel.Warning,
-        descriptionNotificationId,
+        this.descriptionNotificationId,
       );
     }
   }
 
-  async function loadPrimaryContactInfo(formContext: Xrm.FormContext): Promise<void> {
-    NotificationHelper.clearForm(formContext, primaryContactNotificationId);
+  private async loadPrimaryContactInfo(formContext: Xrm.FormContext): Promise<void> {
+    try {
+      NotificationHelper.clearForm(formContext, this.primaryContactNotificationId);
 
-    const lookup = Helper.getLookup(formContext, primaryContact);
-    if (!lookup) {
-      return;
-    }
+      const lookup = Helper.getLookup(formContext, this.primaryContact);
+      if (!lookup) {
+        return;
+      }
 
-    const contact = await QueryHelper.retrieve<ContactSummary>('contact', lookup.id, {
-      select: ['contactid', 'fullname', 'mobilephone', 'emailaddress1'],
-    });
+      const contact = await QueryHelper.retrieve<{
+        contactid: string;
+        fullname: string;
+        mobilephone?: string;
+        emailaddress1?: string;
+      }>('contact', lookup.id, {
+        select: ['contactid', 'fullname', 'mobilephone', 'emailaddress1'],
+      });
 
-    const parts = [contact.fullname];
+      const parts = [contact.fullname];
 
-    if (contact.mobilephone) {
-      parts.push(`Mobile: ${contact.mobilephone}`);
-    }
+      if (contact.mobilephone) {
+        parts.push(`Mobile: ${contact.mobilephone}`);
+      }
 
-    if (contact.emailaddress1) {
-      parts.push(`Email: ${contact.emailaddress1}`);
-    }
+      if (contact.emailaddress1) {
+        parts.push(`Email: ${contact.emailaddress1}`);
+      }
 
-    NotificationHelper.setForm(
-      formContext,
-      `Primary contact: ${parts.join(' | ')}`,
-      XrmEnum.FormNotificationLevel.Info,
-      primaryContactNotificationId,
-    );
+      NotificationHelper.setForm(
+        formContext,
+        `Primary contact: ${parts.join(' | ')}`,
+        XrmEnum.FormNotificationLevel.Info,
+        this.primaryContactNotificationId,
+      );
 
-    if (!Helper.getText(formContext, telephone) && contact.mobilephone) {
-      Helper.setText(formContext, telephone, contact.mobilephone);
+      if (!Helper.getText(formContext, this.telephone) && contact.mobilephone) {
+        Helper.setText(formContext, this.telephone, contact.mobilephone);
+      }
+    } catch {
+      NotificationHelper.clearForm(formContext, this.primaryContactNotificationId);
     }
   }
 }
+
+(window as any).AccountForm = new AccountForm();
+
+export {};

@@ -2,75 +2,69 @@ import { Helper } from '../../common/Helper';
 import { NotificationHelper } from '../../common/NotificationHelper';
 import { QueryHelper } from '../../common/QueryHelper';
 
-interface AccountSummary {
-  accountid: string;
-  name: string;
-  telephone1?: string;
-}
+class ContactForm {
+  private readonly firstName = 'firstname';
+  private readonly lastName = 'lastname';
+  private readonly fullName = 'fullname';
+  private readonly parentCustomer = 'parentcustomerid';
+  private readonly mobilePhone = 'mobilephone';
 
-namespace sha.contact.form {
-  const firstName = 'firstname';
-  const lastName = 'lastname';
-  const fullName = 'fullname';
-  const parentCustomer = 'parentcustomerid';
-  const mobilePhone = 'mobilephone';
+  private readonly nameNotificationId = 'sha_contact_name_warning';
+  private readonly mobileNotificationId = 'sha_contact_mobile_warning';
+  private readonly parentNotificationId = 'sha_contact_parent_info';
 
-  const nameNotificationId = 'sha_contact_name_warning';
-  const mobileNotificationId = 'sha_contact_mobile_warning';
-  const parentNotificationId = 'sha_contact_parent_info';
-
-  export function onLoad(executionContext: Xrm.Events.EventContext): void {
+  public onLoad(executionContext: Xrm.Events.EventContext): void {
     const formContext = Helper.getFormContext(executionContext);
 
-    syncFullName(formContext);
-    validateMobile(formContext);
-    void loadParentCustomerInfo(formContext);
+    this.syncFullName(formContext);
+    this.validateMobile(formContext);
+    void this.loadParentCustomerInfo(formContext);
   }
 
-  export function onFirstNameChange(executionContext: Xrm.Events.EventContext): void {
+  public onFirstNameChange(executionContext: Xrm.Events.EventContext): void {
     const formContext = Helper.getFormContext(executionContext);
-    syncFullName(formContext);
+    this.syncFullName(formContext);
   }
 
-  export function onLastNameChange(executionContext: Xrm.Events.EventContext): void {
+  public onLastNameChange(executionContext: Xrm.Events.EventContext): void {
     const formContext = Helper.getFormContext(executionContext);
-    syncFullName(formContext);
+    this.syncFullName(formContext);
   }
 
-  export function onParentCustomerChange(executionContext: Xrm.Events.EventContext): void {
+  public onParentCustomerChange(executionContext: Xrm.Events.EventContext): void {
     const formContext = Helper.getFormContext(executionContext);
-    void loadParentCustomerInfo(formContext);
+    void this.loadParentCustomerInfo(formContext);
   }
 
-  export function onMobilePhoneChange(executionContext: Xrm.Events.EventContext): void {
+  public onMobilePhoneChange(executionContext: Xrm.Events.EventContext): void {
     const formContext = Helper.getFormContext(executionContext);
-    validateMobile(formContext);
+    this.validateMobile(formContext);
   }
 
-  function syncFullName(formContext: Xrm.FormContext): void {
-    const first = Helper.getText(formContext, firstName) ?? '';
-    const last = Helper.getText(formContext, lastName) ?? '';
+  private syncFullName(formContext: Xrm.FormContext): void {
+    const first = Helper.getText(formContext, this.firstName) ?? '';
+    const last = Helper.getText(formContext, this.lastName) ?? '';
     const value = `${first} ${last}`.trim();
 
-    Helper.setText(formContext, fullName, value || null);
+    Helper.setText(formContext, this.fullName, value || null);
 
     if (!value) {
       NotificationHelper.setForm(
         formContext,
         'First name or last name is empty.',
         XrmEnum.FormNotificationLevel.Warning,
-        nameNotificationId,
+        this.nameNotificationId,
       );
       return;
     }
 
-    NotificationHelper.clearForm(formContext, nameNotificationId);
+    NotificationHelper.clearForm(formContext, this.nameNotificationId);
   }
 
-  function validateMobile(formContext: Xrm.FormContext): void {
-    const value = Helper.getText(formContext, mobilePhone);
+  private validateMobile(formContext: Xrm.FormContext): void {
+    const value = Helper.getText(formContext, this.mobilePhone);
 
-    NotificationHelper.clearControl(formContext, mobilePhone, mobileNotificationId);
+    NotificationHelper.clearControl(formContext, this.mobilePhone, this.mobileNotificationId);
 
     if (!value) {
       return;
@@ -79,34 +73,46 @@ namespace sha.contact.form {
     if (value.replace(/\s+/g, '').length < 7) {
       NotificationHelper.setControl(
         formContext,
-        mobilePhone,
+        this.mobilePhone,
         'Mobile phone looks too short.',
-        mobileNotificationId,
+        this.mobileNotificationId,
       );
     }
   }
 
-  async function loadParentCustomerInfo(formContext: Xrm.FormContext): Promise<void> {
-    NotificationHelper.clearForm(formContext, parentNotificationId);
+  private async loadParentCustomerInfo(formContext: Xrm.FormContext): Promise<void> {
+    try {
+      NotificationHelper.clearForm(formContext, this.parentNotificationId);
 
-    const lookup = Helper.getLookup(formContext, parentCustomer);
-    if (!lookup || lookup.entityType !== 'account') {
-      return;
+      const lookup = Helper.getLookup(formContext, this.parentCustomer);
+      if (!lookup || lookup.entityType !== 'account') {
+        return;
+      }
+
+      const account = await QueryHelper.retrieve<{
+        accountid: string;
+        name: string;
+        telephone1?: string;
+      }>('account', lookup.id, {
+        select: ['accountid', 'name', 'telephone1'],
+      });
+
+      const info = account.telephone1
+        ? `Parent account: ${account.name} | Phone: ${account.telephone1}`
+        : `Parent account: ${account.name}`;
+
+      NotificationHelper.setForm(
+        formContext,
+        info,
+        XrmEnum.FormNotificationLevel.Info,
+        this.parentNotificationId,
+      );
+    } catch {
+      NotificationHelper.clearForm(formContext, this.parentNotificationId);
     }
-
-    const account = await QueryHelper.retrieve<AccountSummary>('account', lookup.id, {
-      select: ['accountid', 'name', 'telephone1'],
-    });
-
-    const info = account.telephone1
-      ? `Parent account: ${account.name} | Phone: ${account.telephone1}`
-      : `Parent account: ${account.name}`;
-
-    NotificationHelper.setForm(
-      formContext,
-      info,
-      XrmEnum.FormNotificationLevel.Info,
-      parentNotificationId,
-    );
   }
 }
+
+(window as any).ContactForm = new ContactForm();
+
+export {};
