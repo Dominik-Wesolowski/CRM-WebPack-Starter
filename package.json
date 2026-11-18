@@ -5,16 +5,24 @@
   "scripts": {
     "build": "webpack",
     "build:dev": "webpack --mode development",
-    "watch": "webpack --watch --mode development"
+    "watch": "webpack --watch --mode development",
+    "typecheck": "tsc --noEmit",
+    "scaffold": "node scripts/scaffold.cjs",
+    "test:artifact": "node --test scripts/artifacts.test.cjs",
+    "init": "node scripts/init.cjs",
+    "generate": "node scripts/scaffold.cjs",
+    "test:init": "node --test scripts/init.test.cjs",
+    "test:helpers": "node --test scripts/helpers.test.cjs"
   },
   "devDependencies": {
     "@types/xrm": "^9.0.90",
+    "handlebars": "^4.7.9",
     "ts-loader": "^9.5.4",
     "typescript": "^6.0.2",
     "webpack": "^5.105.4",
     "webpack-cli": "^6.0.1"
   },
-  "dependencies": {
-    "eslint": "^10.2.0"
+  "engines": {
+    "node": ">=24"
   }
 }

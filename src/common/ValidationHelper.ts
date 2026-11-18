@@ -20,20 +20,16 @@ export class ValidationHelper {
   }
 
   public static minLengthNotMet(value: string | null | undefined, minLength: number): boolean {
-    if (!value) {
-      return true;
-    }
-
-    return value.trim().length < minLength;
+    return (value?.trim().length ?? 0) < minLength;
   }
 
   public static isPhoneLikelyValid(value: string | null | undefined): boolean {
-    if (this.isNullOrWhiteSpace(value) || !value) {
+    const formatted = value?.trim();
+    if (!formatted || !/^\+?[\d\s().-]+$/.test(formatted)) {
       return false;
     }
 
-    const normalized = value.replace(/[^\d+]/g, '');
-    return normalized.length >= 7;
+    return formatted.replace(/\D/g, '').length >= 7;
   }
 
   public static isEmailLikelyValid(value: string | null | undefined): boolean {

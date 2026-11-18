@@ -37,9 +37,6 @@ coverage/
 tmp/
 temp/
 
-# Optional: lock file (keep if you want reproducible builds)
-# package-lock.json
-
 # Mac specific
 .AppleDouble
 .LSOverride
