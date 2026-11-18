@@ -1,0 +1,8 @@
+import { QueryHelper } from '../../../common/QueryHelper';
+
+export function loadRecord<T>(
+  reference: Pick<Xrm.LookupValue, 'entityType' | 'id'>,
+  columns: [string, ...string[]],
+): Promise<T> {
+  return QueryHelper.retrieve<T>(reference.entityType, reference.id, { select: columns });
+}

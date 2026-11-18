@@ -21,8 +21,8 @@ export class NotificationHelper {
     message: string,
     uniqueId: string
   ): boolean {
-    const control = formContext.getControl(logicalName) as Xrm.Controls.StandardControl | null;
-    if (!control) {
+    const control = formContext.getControl(logicalName);
+    if (!control || !('setNotification' in control) || typeof control.setNotification !== 'function') {
       return false;
     }
 
@@ -34,8 +34,8 @@ export class NotificationHelper {
     logicalName: string,
     uniqueId: string
   ): boolean {
-    const control = formContext.getControl(logicalName) as Xrm.Controls.StandardControl | null;
-    if (!control) {
+    const control = formContext.getControl(logicalName);
+    if (!control || !('clearNotification' in control) || typeof control.clearNotification !== 'function') {
       return false;
     }
 

@@ -10,6 +10,7 @@ export interface OptionSetOption<T extends number = number> {
 }
 
 export class Helper {
+  /** @deprecated Use executionContext.getFormContext() directly. */
   public static getFormContext(executionContext: Xrm.Events.EventContext): Xrm.FormContext {
     return executionContext.getFormContext();
   }
@@ -69,12 +70,15 @@ export class Helper {
     return this.getControl(formContext, logicalName) !== null;
   }
 
-  public static getValue<T>(formContext: Xrm.FormContext, logicalName: string): T | null {
+  public static getValue<T extends Xrm.Attributes.AttributeValues>(
+    formContext: Xrm.FormContext,
+    logicalName: string,
+  ): T | null {
     const attr = this.getAttribute(formContext, logicalName);
     return attr ? (attr.getValue() as T | null) : null;
   }
 
-  public static setValue<T>(
+  public static setValue<T extends Xrm.Attributes.AttributeValues>(
     formContext: Xrm.FormContext,
     logicalName: string,
     value: T | null,
@@ -86,12 +90,12 @@ export class Helper {
       return false;
     }
 
-    const currentValue = attribute.getValue() as T | null;
+    const currentValue = attribute.getValue();
     if (this.areEqual(currentValue, value)) {
       return false;
     }
 
-    attribute.setValue(value as any);
+    attribute.setValue(value);
 
     if (fireOnChange) {
       attribute.fireOnChange();
@@ -214,7 +218,7 @@ export class Helper {
   public static getLookup(
     formContext: Xrm.FormContext,
     logicalName: string,
-  ): { id: string; name?: string; entityType: string } | null {
+  ): LookupValue | null {
     const values = this.getValue<Xrm.LookupValue[]>(formContext, logicalName);
 
     if (!values || values.length === 0) {
@@ -233,7 +237,7 @@ export class Helper {
   public static getLookups(
     formContext: Xrm.FormContext,
     logicalName: string,
-  ): Array<{ id: string; name?: string; entityType: string }> {
+  ): LookupValue[] {
     const values = this.getValue<Xrm.LookupValue[]>(formContext, logicalName);
 
     if (!values || values.length === 0) {
@@ -265,7 +269,7 @@ export class Helper {
   public static setLookup(
     formContext: Xrm.FormContext,
     logicalName: string,
-    value: { id: string; name?: string; entityType: string } | null,
+    value: LookupValue | null,
     fireOnChange = false,
   ): boolean {
     const lookupValue = value
@@ -553,12 +557,13 @@ export class Helper {
     return id ? this.normalizeGuid(id) : null;
   }
 
+  /** @deprecated Use formContext.data.entity.getEntityName() directly. */
   public static getEntityName(formContext: Xrm.FormContext): string {
     return formContext.data.entity.getEntityName();
   }
 
   public static getFormId(formContext: Xrm.FormContext): string | undefined {
-    return formContext.ui.formSelector.getCurrentItem()?.getId();
+    return formContext.ui.formSelector?.getCurrentItem()?.getId();
   }
 
   public static getFormType(formContext: Xrm.FormContext): XrmEnum.FormType {
@@ -589,6 +594,7 @@ export class Helper {
     await formContext.data.save();
   }
 
+  /** @deprecated Use formContext.data.refresh(save) directly. */
   public static async refresh(formContext: Xrm.FormContext, save: boolean): Promise<void> {
     await formContext.data.refresh(save);
   }
@@ -601,7 +607,10 @@ export class Helper {
     return `{${this.normalizeGuid(value)}}`;
   }
 
-  private static areEqual<T>(left: T | null, right: T | null): boolean {
+  private static areEqual(
+    left: Xrm.Attributes.AttributeValues | null,
+    right: Xrm.Attributes.AttributeValues | null,
+  ): boolean {
     if (left === right) {
       return true;
     }
@@ -610,6 +619,11 @@ export class Helper {
       return left.getTime() === right.getTime();
     }
 
-    return false;
+    return Array.isArray(left) && Array.isArray(right) && left.length === right.length &&
+      left.every((value, index) => {
+        const other = right[index];
+        if (typeof value === 'number' || typeof other === 'number') return value === other;
+        return value.entityType === other.entityType && this.normalizeGuid(value.id) === this.normalizeGuid(other.id);
+      });
   }
 }

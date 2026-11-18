@@ -1,0 +1,39 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  check:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        include:
+          - os: ubuntu-latest
+            publisher: alpha
+            namespace: Alpha
+          - os: windows-latest
+            publisher: beta
+            namespace: Beta
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run test:init
+      - run: npm run test:helpers
+      - name: Initialize and scaffold a sample project
+        if: ${{ hashFiles('crm.config.json') == '' }}
+        shell: bash
+        run: |
+          npm run init -- starter-ci "${{ matrix.publisher }}" "${{ matrix.namespace }}"
+          npm run generate -- entity sampleOrder main --field name
+          npm run generate -- form sampleOrder orderApproval
+          npm run generate -- ribbon sampleOrder
+      - run: npm run typecheck
+      - run: npm run build:dev
+      - run: npm run test:artifact
+      - run: npm run build
+      - run: npm run test:artifact

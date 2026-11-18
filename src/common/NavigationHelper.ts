@@ -30,13 +30,14 @@ export class NavigationHelper {
   public static async openQuickCreate(
     entityName: string,
     parameters?: Record<string, string>,
-  ): Promise<void> {
+  ): Promise<Xrm.LookupValue[]> {
     const options: Xrm.Navigation.EntityFormOptions = {
       entityName,
       useQuickCreateForm: true,
     };
 
-    await Xrm.Navigation.openForm(options, parameters);
+    const result = await Xrm.Navigation.openForm(options, parameters);
+    return result.savedEntityReference;
   }
 
   public static async openRecord(entityName: string, entityId: string): Promise<void> {

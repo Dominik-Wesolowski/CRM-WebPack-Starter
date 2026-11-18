@@ -1,385 +1,97 @@
-# CRM Webpack + TypeScript Starter
+# Dynamics 365 TypeScript Starter
 
-Minimal starter for Microsoft Dynamics 365 / Dataverse form scripting using Webpack and TypeScript.
+Build standalone JavaScript web resources for Dataverse model-driven apps. Each table can have one forms bundle and one optional ribbon bundle.
 
----
+## Initialize a project
 
-## Overview
+With Node.js 24 or later, choose **Use this template** on GitHub, create a repository such as `XYZ.Webresources`, and clone the new repository. The starter repository must have [Template repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-template-repository) enabled.
 
-This project provides a clean and scalable setup for building CRM form scripts:
+To add the starter to an existing repository, copy `src/`, `scripts/`, `.gitignore`, `README.md`, `package.json`, `package-lock.json`, `tsconfig.json` and `webpack.config.js` into its `XYZ.Webresources/` directory. Configure CI in the parent repository to run the npm commands from that directory.
 
-- Webpack (multi-entry, per file)
-- TypeScript
-- @types/xrm
-- Structured helpers for common CRM scenarios
-- Separate bundles per form script
+Run these commands from the new project directory.
 
----
-
-## Features
-
-- One entry file = one web resource
-- Automatic bundle naming based on folder structure
-- Shared helpers included in each bundle (no extra artifacts)
-- Lightweight abstraction over Xrm API
-- Ready-to-use examples for Contact and Account forms
-
----
-
-## Project Structure
-
-```bash
-src/
-├── common/
-│   ├── Helper.ts
-│   ├── NotificationHelper.ts
-│   ├── SubgridHelper.ts
-│   ├── BpfHelper.ts
-│   ├── QueryHelper.ts
-│   ├── ValidationHelper.ts
-│   ├── NavigationHelper.ts
-│   └── EnvironmentVariableHelper.ts
-│
-└── forms/
-    ├── contact/
-    │   └── contact.form.ts
-    └── account/
-        └── account.form.ts
-```
-
----
-
-## Installation
-
-```bash
-npm install
-```
-
----
-
-## Build
-
-```bash
+```sh
+npm ci
+npm run init -- xyz-webresources xyz Xyz
 npm run build
 ```
 
----
+Run `npm run init` without arguments to enter the package name, solution publisher prefix and JavaScript namespace interactively. The package name uses lowercase letters, digits and hyphens. The directory can still be named `XYZ.Webresources`. Use your solution's publisher prefix without the underscore. Initialization writes `crm.config.json` and updates the package and lockfile names. Commit those files in the initialized project. Builds and generators use the project config automatically.
 
-## Output
-
-```bash
-dist/
-├── crm_forms_contact_contact.form.js
-├── crm_forms_contact_contact.form.js.map
-├── crm_forms_account_account.form.js
-└── crm_forms_account_account.form.js.map
+```sh
+npm run typecheck
+npm run test:init
+npm run test:artifact
+npm run build:dev
+npm run watch
 ```
 
-Each output file represents a separate CRM web resource.
+Development builds use inline source maps. Use the production build for deployment and [browser Local Overrides](https://learn.microsoft.com/en-us/power-apps/developer/model-driven-apps/debug-javascript-webresources) to debug changes locally.
 
-## Build Strategy
+## Generate entities, forms and ribbon commands
 
-This project uses an automatic multi-entry setup based on file naming conventions.
-
-### How it works
-
-- The build scans the entire `src` directory
-- Only files with specific suffixes are treated as entry points
-- Folder structure from `src` is preserved in `dist`
-- Shared files are excluded from being bundled as separate outputs
-
----
-
-### Entry file conventions
-
-Only the following files are compiled into separate web resources:
-
-```
-*.form.ts
-*.ribbon.ts
-*.dialog.ts
-*.command.ts
+```sh
+npm run generate -- entity salesOrder main --field name
+npm run generate -- form salesOrder orderApproval
+npm run generate -- ribbon salesOrder
 ```
 
-Example:
+Entity and form names use camelCase. They identify modules in this project. Use the Dataverse logical name when a query needs it. The optional `--field` takes a column logical name and wires up a typed `OnChange` stub. Add the column to the form before testing it.
 
-```
-src/forms/contact/contact.form.ts   ✔ included
-src/forms/contact/contact.utils.ts  ✖ ignored
-src/common/Helper.ts                ✖ ignored
-```
-
----
-
-### Output structure
-
-The output mirrors the `src` structure:
-
-```
-dist/
+```text
+src/entities/salesOrder/
   forms/
-    contact/
-      crm_contact.form.js
-  ribbons/
-    account/
-      crm_account.ribbon.js
+    index.ts
+    main/
+      on-load.ts
+      on-change.ts
+    orderApproval/
+      on-load.ts
+      on-change.ts
+  ribbon/
+    index.ts
+  services/
+    salesOrderService.ts
 ```
 
-- Folder structure is preserved
-- Prefix (`crm_` by default) is applied only to file names
+The forms index exports named form modules. Adding a form creates `on-load.ts` and `on-change.ts` and appends one export. The form's `onLoad` calls `registerOnChange` during initial load. Add column and handler pairs in `on-change.ts`, alongside the handler implementations. With `--field`, the scaffold adds one pair and a typed handler ready for your logic. The Account main form demonstrates an implemented handler. The ribbon generator creates a sample `refreshForm` command that receives `PrimaryControl`.
 
----
+Creating a table module also creates one service shared by its forms. The generated service includes a typed record read that uses a Dataverse record reference and selected columns. Both Account form events delegate the description check and notification update to the same service function.
 
-### Excluded folders
+Edit the Handlebars templates in `scripts/templates/` to customize the generated TypeScript.
 
-The following root folders are ignored during entry scanning:
+With the example configuration, Webpack discovers the entry points and creates:
 
-```
-common
-types
-models
-```
+| Source entry | JavaScript file in `dist` and Dataverse web resource name | Example handler |
+| --- | --- | --- |
+| `src/entities/salesOrder/forms/index.ts` | `xyz_/salesOrder/forms.js` | `Xyz.SalesOrder.Forms.OrderApproval.onLoad` |
+| `src/entities/salesOrder/ribbon/index.ts` | `xyz_/salesOrder/ribbon.js` | `Xyz.SalesOrder.Ribbon.refreshForm` |
 
-These are intended for shared code and will only be included when imported.
+## Try the Account example
 
----
+1. In an unmanaged solution in DEV, create the JavaScript web resource `xyz_/account/forms.js` using the file at that path under `dist`. Substitute your configured prefix.
+2. Add it to an Account main form with the Description column.
+3. Register `Xyz.Account.Forms.Main.onLoad` as the form **On Load** handler using your configured namespace and enable **Pass execution context as first parameter**.
+4. Publish. Enter more than 250 characters in Description and leave the field to see the warning. Shorten the description to clear it.
 
-### Adding new entries
+Projects upgrading from per-form bundles need to change the web resource and handler names in their form registrations. Remove any previous designer registration for `onDescriptionChange`, which is registered during initial load.
 
-To create a new web resource:
+## Query Dataverse
 
-1. Add a file with a valid suffix:
-
-```
-src/forms/lead/lead.form.ts
-```
-
-2. Run build:
-
-```
-npm run build
-```
-
-3. Output will be generated automatically:
-
-```
-dist/forms/lead/crm_lead.form.js
-```
-
-No configuration changes required.
-
----
-
-### Notes
-
-- No manual entry configuration is needed
-- Prevents accidental bundling of helper or utility files
-- Scales cleanly with large projects
-- New folders are automatically supported
-
----
-
-## CRM Registration
-
-### Contact
-
-**Web resource:**
-
-```
-crm_forms_contact_contact.form.js
-```
-
-**Functions:**
-
-- crm.contact.form.onLoad
-- crm.contact.form.onFirstNameChange
-- crm.contact.form.onLastNameChange
-- crm.contact.form.onParentCustomerChange
-
----
-
-### Account
-
-**Web resource:**
-
-```
-crm_forms_account_account.form.js
-```
-
-**Functions:**
-
-- crm.account.form.onLoad
-- crm.account.form.onNameChange
-- crm.account.form.onPrimaryContactChange
-
----
-
-## Helpers
-
-### Core
-
-- **Helper**
-  Core form utilities (attributes, controls, lookups, option sets, tabs, form state)
-
-- **NotificationHelper**
-  Form and control notifications
-
----
-
-### UI & Form Behavior
-
-- **SubgridHelper**
-  Subgrid access, refresh, and events
-
-- **BpfHelper**
-  Business Process Flow handling
-
----
-
-### Data & Queries
-
-- **QueryHelper**
-  Lightweight wrapper for Xrm.WebApi
-
-- **EnvironmentVariableHelper**
-  Access Dataverse environment variables (with caching)
-
----
-
-### Validation & Navigation
-
-- **ValidationHelper**
-  Reusable validation patterns for form logic
-
-- **NavigationHelper**
-  Wrapper for Xrm.Navigation (open forms, dialogs, web resources)
-
----
-
-## Notes
-
-- `common` folder is not bundled separately — it is included in each entry bundle
-- No global monolithic bundle — each script is isolated
-- Designed for maintainability and safe deployment in CRM
-- Compatible with modern TypeScript and Webpack setup
-- Uses controlled global exposure (`window.*`) for CRM event binding
-
----
-
-## QueryHelper Usage
-
-`QueryHelper` provides a lightweight way to build and execute Web API queries without manually concatenating strings.
-
----
-
-### Retrieve single record
+Import `QueryHelper` from `src/common/QueryHelper.ts` using the relative path from your module.
 
 ```ts
-const account = await QueryHelper.retrieve('account', accountId, {
-  select: ['accountid', 'name', 'telephone1'],
-});
-
-console.log(account.name);
-```
-
----
-
-### Retrieve multiple records
-
-```ts
-const result = await QueryHelper.retrieveMultiple('contact', {
-  select: ['contactid', 'fullname'],
+const result = await QueryHelper.retrieveMultiple<{ fullname: string }>('contact', {
+  select: ['fullname'],
   filter: QueryHelper.filterEquals('statecode', 0),
   top: 5,
 });
-
-for (const contact of result.entities) {
-  console.log(contact.fullname);
-}
 ```
 
----
+The helper builds OData options and returns the original Web API result, including `nextLink` when another page is available. To integrate with an existing release pipeline, map `dist` files to solution sources and package the solution with the [Power Platform CLI](https://learn.microsoft.com/power-platform/developer/cli/reference/solution).
 
-### Select only (simple)
+Use `QueryHelper.retrieveNextPage(table, result.nextLink, maxPageSize)` when a next link is present. Pass the same page size as in the first request and omit `top` when fetching pages. The paging query is forwarded as received from Dataverse.
 
-```ts
-const query = QueryHelper.select('name', 'accountnumber');
-// returns "?$select=name,accountnumber"
-```
+`EnvironmentVariableHelper` reads settings through `Xrm.WebApi.online`. Check access in DEV with the roles that will use the app. Call `clearCache` to reload a setting in the current client session. A generic JSON result type describes the expected shape at compile time.
 
----
-
-### Filter examples
-
-```ts
-const filter = QueryHelper.filterEquals('name', 'Contoso');
-// name eq 'Contoso'
-```
-
-```ts
-const filter = QueryHelper.and(
-  QueryHelper.filterEquals('statecode', 0),
-  QueryHelper.filterEquals('customertypecode', 1),
-);
-```
-
-```ts
-const filter = QueryHelper.or(
-  QueryHelper.filterEquals('name', 'Contoso'),
-  QueryHelper.filterEquals('name', 'Fabrikam'),
-);
-```
-
----
-
-### Full example
-
-```ts
-const contacts = await QueryHelper.retrieveMultiple('contact', {
-  select: ['contactid', 'fullname', 'emailaddress1'],
-  filter: QueryHelper.and(
-    QueryHelper.filterEquals('statecode', 0),
-    QueryHelper.filterEquals('firstname', 'John'),
-  ),
-  orderBy: ['fullname asc'],
-  top: 10,
-});
-```
-
----
-
-### Notes
-
-- No manual string building needed
-- Automatically handles `$select`, `$filter`, `$expand`, `$orderby`, `$top`
-- Returns raw WebApi response (`retrieve` / `retrieveMultipleRecords`)
-- Keep filters simple to avoid OData mistakes
-
-## Recommendations
-
-### Keep
-
-- One responsibility per entry file
-- Shared logic inside `common`
-- Form logic explicit and readable
-
----
-
-### Avoid
-
-- Single large bundles
-- Over-abstracting Xrm API
-- Mixing multiple forms in one script
-- Building generic frameworks too early
-
----
-
-## Philosophy
-
-This starter favors:
-
-- clarity over abstraction
-- explicit form logic over generic wrappers
-- small, focused helpers instead of large frameworks
-
-It is designed to scale with real projects without becoming over-engineered.
+Run `npm run test:helpers` to check the shared helpers with mocked Client APIs.

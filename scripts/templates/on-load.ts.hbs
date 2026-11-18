@@ -1,0 +1,7 @@
+import { registerOnChange } from './on-change';
+
+export function onLoad(executionContext: Xrm.Events.LoadEventContext): void {
+  if (executionContext.getEventArgs().getDataLoadState() === XrmEnum.FormDataLoadState.InitialLoad) {
+    registerOnChange(executionContext.getFormContext());
+  }
+}

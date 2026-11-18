@@ -1,0 +1,17 @@
+const handlers: ReadonlyArray<readonly [string, Xrm.Events.Attribute.ChangeEventHandler]> = [
+{{#if field}}
+  ['{{field}}', {{handlerName}}],
+{{/if}}
+];
+
+export function registerOnChange(formContext: Xrm.FormContext): void {
+  for (const [column, handler] of handlers) {
+    formContext.getAttribute(column)?.addOnChange(handler);
+  }
+}
+{{#if field}}
+
+function {{handlerName}}(_executionContext: Xrm.Events.Attribute.ChangeEventContext): void {
+  // TODO: Implement the form behavior for changes to {{field}}.
+}
+{{/if}}

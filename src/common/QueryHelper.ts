@@ -1,7 +1,10 @@
-export interface QueryOptions {
+export interface RecordQueryOptions {
   select?: string[];
-  filter?: string;
   expand?: string[];
+}
+
+export interface QueryOptions extends RecordQueryOptions {
+  filter?: string;
   top?: number;
   orderBy?: string[];
 }
@@ -15,23 +18,26 @@ export class QueryHelper {
     const parts: string[] = [];
 
     if (options.select && options.select.length > 0) {
-      parts.push(`$select=${options.select.join(',')}`);
+      parts.push(`$select=${encodeURIComponent(options.select.join(','))}`);
     }
 
     if (options.filter) {
-      parts.push(`$filter=${options.filter}`);
+      parts.push(`$filter=${encodeURIComponent(options.filter)}`);
     }
 
     if (options.expand && options.expand.length > 0) {
-      parts.push(`$expand=${options.expand.join(',')}`);
+      parts.push(`$expand=${encodeURIComponent(options.expand.join(','))}`);
     }
 
-    if (typeof options.top === 'number') {
+    if (options.top !== undefined) {
+      if (!Number.isSafeInteger(options.top) || options.top < 0) {
+        throw new RangeError('$top must be a non-negative safe integer.');
+      }
       parts.push(`$top=${options.top}`);
     }
 
     if (options.orderBy && options.orderBy.length > 0) {
-      parts.push(`$orderby=${options.orderBy.join(',')}`);
+      parts.push(`$orderby=${encodeURIComponent(options.orderBy.join(','))}`);
     }
 
     return parts.length > 0 ? `?${parts.join('&')}` : '';
@@ -73,10 +79,10 @@ export class QueryHelper {
   public static async retrieve<T>(
     entityLogicalName: string,
     id: string,
-    options?: QueryOptions,
+    options?: RecordQueryOptions,
   ): Promise<T> {
     const cleanId = id.replace(/[{}]/g, '');
-    const query = this.build(options);
+    const query = this.build({ select: options?.select, expand: options?.expand });
 
     const result = await Xrm.WebApi.retrieveRecord(entityLogicalName, cleanId, query);
     return result as T;
@@ -85,10 +91,27 @@ export class QueryHelper {
   public static async retrieveMultiple<T>(
     entityLogicalName: string,
     options?: QueryOptions,
+    maxPageSize?: number,
   ): Promise<Xrm.RetrieveMultipleResult<T>> {
     const query = this.build(options);
 
-    const result = await Xrm.WebApi.retrieveMultipleRecords(entityLogicalName, query);
-    return result as Xrm.RetrieveMultipleResult<T>;
+    return await Xrm.WebApi.retrieveMultipleRecords<T>(entityLogicalName, query, maxPageSize);
+  }
+
+  public static async retrieveNextPage<T>(
+    entityLogicalName: string,
+    nextLink: string,
+    maxPageSize?: number,
+  ): Promise<Xrm.RetrieveMultipleResult<T>> {
+    const queryStart = nextLink.indexOf('?');
+    if (queryStart < 0 || queryStart === nextLink.length - 1) {
+      throw new Error('nextLink must contain the Dataverse paging query.');
+    }
+
+    return await Xrm.WebApi.retrieveMultipleRecords<T>(
+      entityLogicalName,
+      nextLink.slice(queryStart),
+      maxPageSize,
+    );
   }
 }

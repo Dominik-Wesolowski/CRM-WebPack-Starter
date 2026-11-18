@@ -1,3 +1,8 @@
+type StageResult = 'success' | 'invalid' | 'dirtyForm' | 'preventDefault';
+export type SetActiveStageResult = StageResult | 'unreachable';
+export type MoveNextResult = StageResult | 'crossEntity' | 'stageGate' | 'end';
+export type MovePreviousResult = StageResult | 'crossEntity' | 'stageGate' | 'beginning';
+
 export class BpfHelper {
   public static getActiveProcess(formContext: Xrm.FormContext): Xrm.ProcessFlow.Process | null {
     return formContext.data.process.getActiveProcess();
@@ -17,21 +22,21 @@ export class BpfHelper {
     return stage ? stage.getName() : null;
   }
 
-  public static setActiveStage(formContext: Xrm.FormContext, stageId: string): Promise<string> {
+  public static setActiveStage(formContext: Xrm.FormContext, stageId: string): Promise<SetActiveStageResult> {
     return new Promise((resolve) => {
-      formContext.data.process.setActiveStage(stageId, (result) => resolve(result));
+      formContext.data.process.setActiveStage(stageId, (result) => resolve(result as SetActiveStageResult));
     });
   }
 
-  public static moveNext(formContext: Xrm.FormContext): Promise<string> {
+  public static moveNext(formContext: Xrm.FormContext): Promise<MoveNextResult> {
     return new Promise((resolve) => {
-      formContext.data.process.moveNext((result) => resolve(result));
+      formContext.data.process.moveNext((result) => resolve(result as MoveNextResult));
     });
   }
 
-  public static movePrevious(formContext: Xrm.FormContext): Promise<string> {
+  public static movePrevious(formContext: Xrm.FormContext): Promise<MovePreviousResult> {
     return new Promise((resolve) => {
-      formContext.data.process.movePrevious((result) => resolve(result));
+      formContext.data.process.movePrevious((result) => resolve(result as MovePreviousResult));
     });
   }
 
